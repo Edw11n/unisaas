@@ -189,10 +189,13 @@ export class InvoiceService {
       }
 
       if (invoice.status === 'VOIDED') {
-        throw new ConflictException('La factura ya se encuentra anulada');
+        return {
+          ...invoice,
+          alreadyVoided: true,
+        };
       }
 
-      return tx.invoice.update({
+      const updated = await tx.invoice.update({
         where: { id },
         data: {
           status: 'VOIDED',
@@ -205,6 +208,11 @@ export class InvoiceService {
           voider: { select: { id: true, fullName: true, email: true } },
         },
       });
+
+      return {
+        ...updated,
+        alreadyVoided: false,
+      };
     });
   }
 }
