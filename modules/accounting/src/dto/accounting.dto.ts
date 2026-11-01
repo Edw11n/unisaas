@@ -8,7 +8,8 @@ export interface CreateAccountDto {
 }
 
 export interface JournalLineDto {
-  accountId: string;
+  accountId?: string;
+  accountCode?: string;
   debit: number;
   credit: number;
   thirdPartyId?: string;
@@ -34,3 +35,27 @@ export interface CreateJournalEntryDto {
   lines: JournalLineDto[];
 }
 
+export interface ManualEntryDto {
+  branchId: string;
+  concept: string;
+  entryDate?: string;
+  lines: JournalLineDto[];
+}
+
+export interface ReversalEntryDto {
+  originalEntryId?: string;
+  originalEntryNumber?: number | string | bigint;
+  reason?: string;
+}
+
+export interface SalesPosCausationDto {
+  invoiceId: string;
+  invoiceConsecutive: string;
+  branchId: string;
+  customerId?: string | null;
+  paymentMethod: string;
+  subtotal: number;
+  taxAmount: number;
+  total: number;
+  costOfGoodsSold?: number | null;
+}

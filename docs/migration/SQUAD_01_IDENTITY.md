@@ -173,3 +173,4 @@ Todas las 22 tareas de pruebas en los 14 paquetes del monorepo pasaron con **cer
 La **Squad 1 ha alcanzado el 100% de paridad funcional** con respecto al repositorio original `old/squad1_core_architecture_rls_rbac-main`. Todos los módulos, entidades, servicios, controladores y pruebas están formalmente migrados, compilados y verificados.
 
 **Squad 1 queda formalmente CERRADA y lista para commit independiente.**
+

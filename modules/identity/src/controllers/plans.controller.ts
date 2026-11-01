@@ -60,3 +60,4 @@ export class PlansController {
     return this.plansService.assignPlanToTenant(tenantId, body.planCode);
   }
 }
+

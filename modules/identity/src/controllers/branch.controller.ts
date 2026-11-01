@@ -72,3 +72,4 @@ export class BranchController {
     await this.branchService.softDelete(tenantId, identifier);
   }
 }
+

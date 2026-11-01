@@ -35,3 +35,4 @@ export class CommercialCategoriesController {
     return this.categoriesService.findByCode(code);
   }
 }
+

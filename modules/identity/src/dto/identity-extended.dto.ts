@@ -153,3 +153,4 @@ export class AssignPlanDto {
   @ApiProperty({ example: 'PRO_GROWTH' })
   planCode!: string;
 }
+

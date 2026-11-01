@@ -7,10 +7,21 @@ import type { CreateAccountDto } from '../dto/accounting.dto.js';
 export class AccountService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async getAccounts(tenantId: string) {
+  async getAccounts(
+    tenantId: string,
+    filters?: { accountType?: string; isActive?: boolean },
+  ) {
     return withTenantContext(this.prisma, tenantId, async (tx) => {
+      const where: any = {};
+      if (filters?.accountType) {
+        where.accountType = filters.accountType;
+      }
+      if (filters?.isActive !== undefined) {
+        where.isActive = filters.isActive;
+      }
+
       return tx.chartOfAccount.findMany({
-        where: { isActive: true },
+        where,
         orderBy: { code: 'asc' },
       });
     });
@@ -28,6 +39,14 @@ export class AccountService {
       }
 
       return account;
+    });
+  }
+
+  async findByCode(tenantId: string, code: string) {
+    return withTenantContext(this.prisma, tenantId, async (tx) => {
+      return tx.chartOfAccount.findFirst({
+        where: { code },
+      });
     });
   }
 
@@ -57,4 +76,3 @@ export class AccountService {
     });
   }
 }
-

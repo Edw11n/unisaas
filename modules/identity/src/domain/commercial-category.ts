@@ -412,3 +412,4 @@ export const COMMERCIAL_CATEGORIES: CommercialCategory[] = [
     capabilities: { quickSale: true, customAttributes: true, barcodeScanner: true, creditFiado: true },
   },
 ];
+
