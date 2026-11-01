@@ -469,6 +469,9 @@ importers:
       '@unisaas/redis-client':
         specifier: workspace:*
         version: link:../../packages/redis-client
+      decimal.js:
+        specifier: ^10.4.3
+        version: 10.6.0
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2

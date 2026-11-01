@@ -23,6 +23,7 @@
     "@unisaas/core-domain": "workspace:*",
     "@unisaas/database": "workspace:*",
     "@unisaas/redis-client": "workspace:*",
+    "decimal.js": "^10.4.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },

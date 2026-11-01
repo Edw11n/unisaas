@@ -3,12 +3,19 @@ import { PrismaClient } from '@unisaas/database';
 import { ProductService } from './services/product.service.js';
 import { WarehouseService } from './services/warehouse.service.js';
 import { StockService } from './services/stock.service.js';
+import { CategoryService } from './services/category.service.js';
 import { ProductController } from './controllers/product.controller.js';
 import { WarehouseController } from './controllers/warehouse.controller.js';
 import { StockController } from './controllers/stock.controller.js';
+import { CategoryController } from './controllers/category.controller.js';
 
 @Module({
-  controllers: [ProductController, WarehouseController, StockController],
+  controllers: [
+    ProductController,
+    WarehouseController,
+    StockController,
+    CategoryController,
+  ],
   providers: [
     {
       provide: PrismaClient,
@@ -16,7 +23,9 @@ import { StockController } from './controllers/stock.controller.js';
         return new PrismaClient({
           datasources: {
             db: {
-              url: process.env.DATABASE_URL || 'postgresql://app_runtime:postgres@localhost:5432/saas_contable_db?schema=public',
+              url:
+                process.env.DATABASE_URL ||
+                'postgresql://app_runtime:postgres@localhost:5432/saas_contable_db?schema=public',
             },
           },
         });
@@ -25,13 +34,14 @@ import { StockController } from './controllers/stock.controller.js';
     ProductService,
     WarehouseService,
     StockService,
+    CategoryService,
   ],
   exports: [
     ProductService,
     WarehouseService,
     StockService,
+    CategoryService,
     PrismaClient,
   ],
 })
 export class InventoryModule {}
-
