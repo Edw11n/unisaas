@@ -21,10 +21,10 @@ export class CreditService {
   }
 
   async registerTransaction(tenantId: string, userId: string, dto: CreditTransactionDto) {
-    const txAmount = Money.from(dto.amount);
-    if (txAmount.isZero() || txAmount.isNegative()) {
+    if (!dto.amount || dto.amount <= 0) {
       throw new BadRequestException('El monto de la transacción de crédito debe ser estrictamente positivo');
     }
+    const txAmount = Money.from(dto.amount);
 
     return withTenantContext(this.prisma, tenantId, async (tx) => {
       const thirdParty = await tx.thirdParty.findUnique({

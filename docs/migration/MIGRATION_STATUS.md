@@ -16,9 +16,9 @@
 | **3** | **Inventory & Kardex CPP** | `modules/inventory` | ✅ **CERRADA** | 19/19 Tests (100%) | Pendiente de commit |
 | **4** | **Web Desktop POS** | `apps/web-pos` | ✅ **CERRADA** | 23/23 Tests (100%) | `a7d63b0` |
 | **5** | **Mobile POS Offline** | `apps/mobile-pos` | ✅ **CERRADA** | 23/23 Tests (100%) | `9c94161` |
-| **6** | **Reports, Audit & ESCPOS** | `packages/escpos`, `modules/sales` | ✅ **CERRADA** | 12/12 Tests (100%) | Pendiente de commit |
-| **7** | **Credits, Purchases & Suppliers** | `modules/credits` | ⏳ SIGUIENTE | Pendiente de inicio | - |
-| **8** | **DevOps, SRE & QA** | `apps/qa-e2e` | ⏳ PENDIENTE | Pendiente de inicio | - |
+| **6** | **Reports, Audit & ESCPOS** | `packages/escpos`, `modules/sales` | ✅ **CERRADA** | 12/12 Tests (100%) | `0d54dd6` |
+| **7** | **Credits, Purchases & Suppliers** | `modules/credits` | ✅ **CERRADA** | 10/10 Tests (100%) | Pendiente de commit |
+| **8** | **DevOps, SRE & QA** | `apps/qa-e2e` | ⏳ SIGUIENTE | Pendiente de inicio | - |
 
 ---
 
