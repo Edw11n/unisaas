@@ -1,0 +1,26 @@
+{
+  "name": "@unisaas/qa-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test:rls": "node --test dist/rls-certification/run-rls-tests.js",
+    "test:e2e": "node --test --test-concurrency=1 dist/e2e/*.e2e-spec.js",
+    "seed": "node dist/fixtures/seed-qa-data.js",
+    "test:k6": "powershell -ExecutionPolicy Bypass -File scripts/run-k6-load.ps1"
+  },
+  "dependencies": {
+    "@unisaas/contracts": "workspace:*",
+    "@unisaas/database": "workspace:*",
+    "@unisaas/redis-client": "workspace:*",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.9.3"
+  }
+}
+

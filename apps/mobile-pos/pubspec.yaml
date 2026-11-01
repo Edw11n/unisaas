@@ -1,0 +1,31 @@
+name: unisaas_mobile_pos
+description: Aplicacion movil nativa Flutter con arquitectura Offline-First para POS mostrador y venta en ruta - UniSaaS.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+  flutter: '>=3.24.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.6.1
+  drift: ^2.24.2
+  sqlite3_flutter_libs: ^0.5.24
+  path_provider: ^2.1.5
+  path: ^1.9.0
+  http: ^1.2.2
+  uuid: ^4.5.1
+  intl: ^0.19.0
+  flutter_secure_storage: ^9.2.2
+  unisaas_mobile_api:
+    path: lib/core/api/generated
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true

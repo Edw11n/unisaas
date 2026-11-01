@@ -1,0 +1,24 @@
+{
+  "name": "unisaas-monorepo",
+  "private": true,
+  "packageManager": "pnpm@12.16.1",
+  "engines": {
+    "node": "^24.0.0 || ^26.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
+    "db:validate": "pnpm --filter @unisaas/database db:validate",
+    "db:generate": "pnpm --filter @unisaas/database db:generate",
+    "db:migrate:dev": "pnpm --filter @unisaas/database db:migrate:dev"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.4",
+    "prettier": "^3.4.2",
+    "typescript": "^5.9.3"
+  }
+}
+

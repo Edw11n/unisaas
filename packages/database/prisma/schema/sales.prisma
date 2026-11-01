@@ -1,0 +1,129 @@
+// ============================================================================
+// DOMINIO DE VENTAS, POS, FACTURACIÓN Y TURNOS DE CAJA
+// ============================================================================
+
+enum PosShiftStatus {
+  OPEN
+  CLOSED
+  RECONCILED
+
+  @@map("pos_shift_status_enum")
+}
+
+enum InvoicePaymentMethod {
+  EFECTIVO
+  NEQUI
+  DAVIPLATA
+  TARJETA
+  CREDITO_FIADO
+  MIXTO
+
+  @@map("invoice_payment_method_enum")
+}
+
+enum InvoiceStatus {
+  ISSUED
+  VOIDED
+
+  @@map("invoice_status_enum")
+}
+
+model PosShift {
+  id                String         @id @default(uuid()) @db.Uuid
+  tenantId          String         @map("tenant_id") @db.Uuid
+  branchId          String         @map("branch_id") @db.Uuid
+  cashierId         String         @map("cashier_id") @db.Uuid
+  shiftNumber       BigInt         @map("shift_number")
+  openingTime       DateTime       @default(now()) @map("opening_time") @db.Timestamptz
+  closingTime       DateTime?      @map("closing_time") @db.Timestamptz
+  initialCash       Decimal        @default(0.00) @map("initial_cash") @db.Decimal(15, 2)
+  totalSales        Decimal        @default(0.00) @map("total_sales") @db.Decimal(15, 2)
+  totalCashSales    Decimal        @default(0.00) @map("total_cash_sales") @db.Decimal(15, 2)
+  totalDigitalSales Decimal        @default(0.00) @map("total_digital_sales") @db.Decimal(15, 2)
+  totalCreditSales  Decimal        @default(0.00) @map("total_credit_sales") @db.Decimal(15, 2)
+  expectedCash      Decimal?       @map("expected_cash") @db.Decimal(15, 2)
+  actualCash        Decimal?       @map("actual_cash") @db.Decimal(15, 2)
+  difference        Decimal?       @db.Decimal(15, 2)
+  status            PosShiftStatus @default(OPEN)
+  closedById        String?        @map("closed_by") @db.Uuid
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  branch   Branch    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  cashier  User      @relation("ShiftCashier", fields: [cashierId], references: [id])
+  closedBy User?     @relation("ShiftClosedBy", fields: [closedById], references: [id])
+  invoices Invoice[]
+
+  @@unique([tenantId, shiftNumber], map: "uq_tenant_shift_number")
+  @@unique([tenantId, id], map: "uq_pos_shifts_tenant_id")
+  @@map("pos_shifts")
+}
+
+model Invoice {
+  id               String               @id @default(uuid()) @db.Uuid
+  tenantId         String               @map("tenant_id") @db.Uuid
+  branchId         String               @map("branch_id") @db.Uuid
+  posShiftId       String?              @map("pos_shift_id") @db.Uuid
+  consecutive      String               @db.VarChar(50)
+  customerId       String?              @map("customer_id") @db.Uuid
+  customerName     String               @default("Consumidor Final") @map("customer_name") @db.VarChar(150)
+  customerDocument String               @default("222222222") @map("customer_document") @db.VarChar(20)
+  subtotal         Decimal              @db.Decimal(15, 2)
+  discountTotal    Decimal              @default(0.00) @map("discount_total") @db.Decimal(15, 2)
+  taxTotal         Decimal              @map("tax_total") @db.Decimal(15, 2)
+  total            Decimal              @db.Decimal(15, 2)
+  paymentMethod    InvoicePaymentMethod @map("payment_method")
+  cashTendered     Decimal?             @map("cash_tendered") @db.Decimal(15, 2)
+  changeGiven      Decimal?             @map("change_given") @db.Decimal(15, 2)
+  journalEntryId   String?              @map("journal_entry_id") @db.Uuid
+  status           InvoiceStatus        @default(ISSUED)
+  voidReason       String?              @map("void_reason") @db.Text
+  voidedBy         String?              @map("voided_by") @db.Uuid
+  voidedAt         DateTime?            @map("voided_at") @db.Timestamptz
+  idempotencyKey   String?              @unique @map("idempotency_key") @db.Uuid
+  createdBy        String               @map("created_by") @db.Uuid
+  createdAt        DateTime             @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  branch       Branch        @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  posShift     PosShift?     @relation(fields: [posShiftId], references: [id])
+  customer     ThirdParty?   @relation(fields: [customerId], references: [id])
+  journalEntry JournalEntry? @relation(fields: [journalEntryId], references: [id])
+  creator      User          @relation("InvoiceCreatedBy", fields: [createdBy], references: [id])
+  voider       User?         @relation("InvoiceVoidedBy", fields: [voidedBy], references: [id])
+  items        InvoiceItem[]
+
+  @@unique([tenantId, consecutive], map: "uq_tenant_invoice_consecutive")
+  @@unique([tenantId, id], map: "uq_invoices_tenant_id")
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id             String  @id @default(uuid()) @db.Uuid
+  tenantId       String  @map("tenant_id") @db.Uuid
+  invoiceId      String  @map("invoice_id") @db.Uuid
+  productId      String  @map("product_id") @db.Uuid
+  variantId      String  @map("variant_id") @db.Uuid
+  productName    String  @map("product_name") @db.VarChar(150)
+  productSku     String  @map("product_sku") @db.VarChar(50)
+  quantity       Decimal @db.Decimal(18, 6)
+  unitOfMeasure  String  @default("UNIDAD") @map("unit_of_measure") @db.VarChar(20)
+  unitPrice      Decimal @map("unit_price") @db.Decimal(15, 2)
+  unitCost       Decimal @map("unit_cost") @db.Decimal(18, 6)
+  discountRate   Decimal @default(0.00) @map("discount_rate") @db.Decimal(5, 2)
+  taxRate        Decimal @default(0.19) @map("tax_rate") @db.Decimal(5, 2)
+  subtotal       Decimal @db.Decimal(15, 2)
+  discountAmount Decimal @default(0.00) @map("discount_amount") @db.Decimal(15, 2)
+  taxAmount      Decimal @map("tax_amount") @db.Decimal(15, 2)
+  total          Decimal @db.Decimal(15, 2)
+
+  tenant  Tenant         @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  invoice Invoice        @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product Product        @relation(fields: [productId], references: [id], onDelete: Restrict)
+  variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+
+  @@unique([tenantId, id], map: "uq_invoice_items_tenant_id")
+  @@index([invoiceId], map: "idx_invoice_items_invoice")
+  @@map("invoice_items")
+}
+

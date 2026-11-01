@@ -1,0 +1,209 @@
+// ============================================================================
+// DOMINIO DE INQUILINOS (TENANCY), SUCURSALES, USUARIOS Y RBAC
+// ============================================================================
+
+enum TaxRegime {
+  REGIMEN_SIMPLE
+  RESPONSABLE_IVA
+  NO_RESPONSABLE_IVA
+  GRAN_CONTRIBUYENTE
+  REGIMEN_ESPECIAL
+
+  @@map("tax_regime_enum")
+}
+
+enum DocumentType {
+  CC
+  CE
+  TI
+  NIT
+  PP
+  PEP
+
+  @@map("document_type_enum")
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  ACCOUNTANT
+  WAREHOUSE_MANAGER
+  CASHIER
+
+  @@map("user_role_enum")
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  ARCHIVE
+  POST
+  REVERSE
+  TRANSFER
+  ADJUST
+  STOCK_COUNT
+
+  @@map("audit_action_enum")
+}
+
+model Tenant {
+  id           String    @id @default(uuid()) @db.Uuid
+  nitRut       String    @unique @map("nit_rut") @db.VarChar(20)
+  businessName String    @map("business_name") @db.VarChar(150)
+  tradeName    String    @map("trade_name") @db.VarChar(150)
+  address      String    @db.VarChar(200)
+  phone        String    @db.VarChar(50)
+  email        String    @db.VarChar(100)
+  countryCode  String    @default("COL") @map("country_code") @db.VarChar(3)
+  currencyCode String    @default("COP") @map("currency_code") @db.VarChar(3)
+  taxRegime    TaxRegime @default(REGIMEN_SIMPLE) @map("tax_regime")
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relaciones Core
+  branches        Branch[]
+  users           User[]
+  auditLogs       AuditLog[]
+  tenantSequences TenantSequence[]
+
+  // Relaciones Terceros, Compras & Cartera
+  thirdParties       ThirdParty[]
+  purchases          Purchase[]
+  purchaseItems      PurchaseItem[]
+  creditTransactions CreditTransaction[]
+
+  // Relaciones Motor Contable
+  chartOfAccounts   ChartOfAccount[]
+  journalEntries    JournalEntry[]
+  journalEntryLines JournalEntryLine[]
+
+  // Relaciones POS & Facturación
+  posShifts    PosShift[]
+  invoices     Invoice[]
+  invoiceItems InvoiceItem[]
+
+  // Relaciones Motor de Inventario & Kardex
+  productCategories        ProductCategory[]
+  unitOfMeasures           UnitOfMeasure[]
+  products                 Product[]
+  productVariants          ProductVariant[]
+  productBarcodes          ProductBarcode[]
+  warehouses               Warehouse[]
+  inventoryBalances        InventoryBalance[]
+  inventoryMovements       InventoryMovement[]
+  inventoryMovementLines   InventoryMovementLine[]
+  inventoryLedgerEntries   InventoryLedgerEntry[]
+  inventoryTransfers       InventoryTransfer[]
+  inventoryTransferLines   InventoryTransferLine[]
+  stockCounts              StockCount[]
+  stockCountLines          StockCountLine[]
+  inventoryIdempotencyKeys InventoryIdempotencyKey[]
+  inventoryOutboxEvents    InventoryOutboxEvent[]
+  inventoryAuditLogs       InventoryAuditLog[]
+
+  @@map("tenants")
+}
+
+model Branch {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  code      String   @db.VarChar(20)
+  name      String   @db.VarChar(100)
+  address   String?  @db.VarChar(200)
+  phone     String?  @db.VarChar(50)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  users          User[]
+  warehouses     Warehouse[]
+  journalEntries JournalEntry[]
+  posShifts      PosShift[]
+  invoices       Invoice[]
+  purchases      Purchase[]
+
+  @@unique([tenantId, code], map: "uq_tenant_branch_code")
+  @@unique([tenantId, id], map: "uq_branches_tenant_id")
+  @@map("branches")
+}
+
+model User {
+  id             String       @id @default(uuid()) @db.Uuid
+  tenantId       String       @map("tenant_id") @db.Uuid
+  branchId       String?      @map("branch_id") @db.Uuid
+  documentType   DocumentType @default(CC) @map("document_type")
+  documentNumber String       @map("document_number") @db.VarChar(20)
+  email          String       @db.VarChar(120)
+  passwordHash   String       @map("password_hash") @db.VarChar(255)
+  fullName       String       @map("full_name") @db.VarChar(120)
+  phone          String?      @db.VarChar(50)
+  role           UserRole
+  isActive       Boolean      @default(true) @map("is_active")
+  lastLoginAt    DateTime?    @map("last_login_at") @db.Timestamptz
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch Branch? @relation(fields: [branchId], references: [id], onDelete: Restrict)
+
+  auditLogs              AuditLog[]
+  inventoryAuditLogs     InventoryAuditLog[] @relation("InventoryAuditLogPerformedBy")
+  journalEntriesCreated  JournalEntry[]      @relation("JournalCreatedBy")
+  shiftsAsCashier        PosShift[]          @relation("ShiftCashier")
+  shiftsClosed           PosShift[]          @relation("ShiftClosedBy")
+  invoicesCreated        Invoice[]           @relation("InvoiceCreatedBy")
+  invoicesVoided         Invoice[]           @relation("InvoiceVoidedBy")
+  purchasesCreated       Purchase[]          @relation("PurchaseCreatedBy")
+  creditTxCreated        CreditTransaction[] @relation("CreditTxCreatedBy")
+  movementsCreated       InventoryMovement[] @relation("MovementCreatedBy")
+  movementsPosted        InventoryMovement[] @relation("MovementPostedBy")
+  movementsReversed      InventoryMovement[] @relation("MovementReversedBy")
+  transfersCreated       InventoryTransfer[] @relation("TransferCreatedBy")
+  transfersCompleted     InventoryTransfer[] @relation("TransferCompletedBy")
+  stockCountsCreated     StockCount[]        @relation("StockCountCreatedBy")
+  stockCountsCompleted   StockCount[]        @relation("StockCountCompletedBy")
+  stockCountLinesCounted StockCountLine[]    @relation("StockCountLineCountedBy")
+
+  @@unique([tenantId, email], map: "uq_tenant_user_email")
+  @@unique([tenantId, documentNumber], map: "uq_tenant_user_doc")
+  @@unique([tenantId, id], map: "uq_users_tenant_id")
+  @@index([tenantId, role], map: "idx_users_tenant_role")
+  @@index([tenantId, branchId], map: "idx_users_tenant_branch")
+  @@map("users")
+}
+
+model TenantSequence {
+  id           String @id @default(uuid()) @db.Uuid
+  tenantId     String @map("tenant_id") @db.Uuid
+  sequenceKey  String @map("sequence_key") @db.VarChar(50)
+  currentValue BigInt @default(0) @map("current_value")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@unique([tenantId, sequenceKey], map: "uq_tenant_sequence")
+  @@unique([tenantId, id], map: "uq_tenant_sequences_tenant_id")
+  @@map("tenant_sequences")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  action     String   @db.VarChar(50)
+  entityName String   @map("entity_name") @db.VarChar(50)
+  entityId   String   @map("entity_id") @db.Uuid
+  ipAddress  String?  @map("ip_address") @db.VarChar(45)
+  userAgent  String?  @map("user_agent") @db.VarChar(300)
+  details    Json     @default("{}") @db.JsonB
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, id], map: "uq_audit_logs_tenant_id")
+  @@index([tenantId, entityName, entityId], map: "idx_audit_tenant_entity")
+  @@map("audit_logs")
+}
+

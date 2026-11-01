@@ -1,0 +1,114 @@
+// ============================================================================
+// DOMINIO DE MOTOR CONTABLE, PUC Y ASIENTOS (PARTIDA DOBLE)
+// ============================================================================
+
+enum AccountType {
+  ACTIVO
+  PASIVO
+  PATRIMONIO
+  INGRESO
+  GASTO
+  COSTO
+
+  @@map("account_type_enum")
+}
+
+enum AccountNature {
+  D
+  C
+
+  @@map("account_nature_enum")
+}
+
+enum JournalSourceDocumentType {
+  SALE_POS
+  PURCHASE
+  CUSTOMER_PAYMENT
+  SUPPLIER_PAYMENT
+  REVERSAL
+  SHRINKAGE
+  MANUAL_ADJUSTMENT
+  OPENING_BALANCE
+  INVENTORY_MOVEMENT
+
+  @@map("journal_source_doc_enum")
+}
+
+model ChartOfAccount {
+  id           String        @id @default(uuid()) @db.Uuid
+  tenantId     String        @map("tenant_id") @db.Uuid
+  code         String        @db.VarChar(20)
+  name         String        @db.VarChar(150)
+  accountType  AccountType   @map("account_type")
+  nature       AccountNature
+  parentId     String?       @map("parent_id") @db.Uuid
+  isSelectable Boolean       @default(true) @map("is_selectable")
+  isActive     Boolean       @default(true) @map("is_active")
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parent            ChartOfAccount?    @relation("AccountHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children          ChartOfAccount[]   @relation("AccountHierarchy")
+  journalEntryLines JournalEntryLine[]
+
+  @@unique([tenantId, code], map: "uq_tenant_account_code")
+  @@unique([tenantId, id], map: "uq_chart_tenant_id")
+  @@index([tenantId, accountType], map: "idx_chart_tenant_type")
+  @@map("chart_of_accounts")
+}
+
+model JournalEntry {
+  id                 String                    @id @default(uuid()) @db.Uuid
+  tenantId           String                    @map("tenant_id") @db.Uuid
+  branchId           String                    @map("branch_id") @db.Uuid
+  entryNumber        BigInt                    @map("entry_number")
+  entryDate          DateTime                  @default(now()) @map("entry_date") @db.Date
+  concept            String                    @db.VarChar(255)
+  sourceDocumentType JournalSourceDocumentType @map("source_document_type")
+  sourceDocumentId   String?                   @map("source_document_id") @db.Uuid
+  totalDebit         Decimal                   @map("total_debit") @db.Decimal(15, 2)
+  totalCredit        Decimal                   @map("total_credit") @db.Decimal(15, 2)
+  isReversed         Boolean                   @default(false) @map("is_reversed")
+  reversalEntryId    String?                   @unique @map("reversal_entry_id") @db.Uuid
+  createdById        String?                   @map("created_by") @db.Uuid
+  createdAt          DateTime                  @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  branch            Branch             @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  createdBy         User?              @relation("JournalCreatedBy", fields: [createdById], references: [id])
+  reversalEntry     JournalEntry?      @relation("JournalReversal", fields: [reversalEntryId], references: [id])
+  reversedBy        JournalEntry?      @relation("JournalReversal")
+  lines             JournalEntryLine[]
+  invoices          Invoice[]
+  purchases         Purchase[]
+  creditTransaction CreditTransaction?
+
+  @@unique([tenantId, entryNumber], map: "uq_tenant_entry_number")
+  @@unique([tenantId, id], map: "uq_journal_entries_tenant_id")
+  @@index([tenantId, entryDate], map: "idx_journal_entries_date")
+  @@map("journal_entries")
+}
+
+model JournalEntryLine {
+  id             String        @id @default(uuid()) @db.Uuid
+  tenantId       String        @map("tenant_id") @db.Uuid
+  journalEntryId String        @map("journal_entry_id") @db.Uuid
+  accountId      String        @map("account_id") @db.Uuid
+  thirdPartyId   String?       @map("third_party_id") @db.Uuid
+  debit          Decimal       @default(0.00) @db.Decimal(15, 2)
+  credit         Decimal       @default(0.00) @db.Decimal(15, 2)
+  description    String?       @db.VarChar(255)
+  nature         AccountNature
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant       Tenant         @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  journalEntry JournalEntry   @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  account      ChartOfAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  thirdParty   ThirdParty?    @relation(fields: [thirdPartyId], references: [id], onDelete: Restrict)
+
+  @@unique([tenantId, id], map: "uq_journal_lines_tenant_id")
+  @@index([journalEntryId], map: "idx_jel_entry")
+  @@index([tenantId, accountId], map: "idx_jel_account")
+  @@map("journal_entry_lines")
+}
+

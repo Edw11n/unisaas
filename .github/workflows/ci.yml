@@ -1,0 +1,327 @@
+name: CI - Monorepo UNISAAS
+
+# GitHub Actions solo lee .github/workflows/ en la raíz del repositorio.
+# Este repo es un monorepo sin package.json raíz: cada squad se valida en su
+# propio directorio mediante matriz + working-directory.
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Calidad por squad. Solo se ejecutan los scripts que existen realmente en
+  # cada package.json; si un script no existe, el step lo reporta como SKIP
+  # (no se inventan comandos).
+  # ---------------------------------------------------------------------------
+  quality:
+    name: Calidad ${{ matrix.squad }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - squad: squad1
+            dir: squad1_core_architecture_rls_rbac-main
+          - squad: squad2
+            dir: squad2_accounting_engine_ledger-main
+          - squad: squad3
+            dir: squad3_inventory_kardex_cpp-master
+          - squad: squad4
+            dir: squad4_web_desktop_pos_nextjs-main
+          - squad: squad6
+            dir: squad6_reports_audit_escpos-develop
+          - squad: squad7
+            dir: squad7_credits_purchases_suppliers-main
+          - squad: squad8
+            dir: squad8_devops_sre_qa-main
+
+    env:
+      CI: 'true'
+      # Valor de prueba para suites que cargan configuración al importar.
+      # No es una credencial real ni apunta a producción.
+      JWT_SECRET: ci-test-jwt-secret-not-for-production
+      DATABASE_URL: postgresql://ci_unisaas:ci_ephemeral_runner_only@localhost:5432/ci_unisaas_db
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependencias (según lockfile real)
+        shell: bash
+        working-directory: ${{ matrix.dir }}
+        run: |
+          set -euo pipefail
+          if [ -f package-lock.json ]; then
+            echo "Lockfile: package-lock.json -> npm ci con fallback"
+            npm ci --legacy-peer-deps || npm install --no-audit --no-fund --legacy-peer-deps
+          elif [ -f pnpm-lock.yaml ]; then
+            echo "Lockfile: pnpm-lock.yaml -> pnpm install --frozen-lockfile"
+            corepack pnpm config set enable-pre-post-scripts true || true
+            corepack pnpm install --frozen-lockfile || corepack pnpm install
+          else
+            echo "Sin lockfile versionado -> npm install (solo para CI)"
+            npm install --no-audit --no-fund --legacy-peer-deps
+          fi
+
+      # squad3 usa Prisma; el script existe en package.json y es prerequisito
+      # del build (cliente generado). No se ejecuta en los demás squads.
+      - name: Prisma generate (squad3)
+        if: matrix.squad == 'squad3'
+        working-directory: ${{ matrix.dir }}
+        run: npx prisma generate --schema=./prisma/schema.prisma || npm run prisma:generate
+
+      - name: Lint (solo si el script existe)
+        working-directory: ${{ matrix.dir }}
+        run: |
+          if node -e "const s=require('./package.json').scripts||{};process.exit(s.lint?0:1)"; then
+            npm run lint
+          else
+            echo "SKIP: ${{ matrix.squad }} no define el script 'lint'"
+          fi
+
+      - name: Typecheck (solo si el script existe)
+        working-directory: ${{ matrix.dir }}
+        run: |
+          if node -e "const s=require('./package.json').scripts||{};process.exit(s.typecheck?0:1)"; then
+            npm run typecheck
+          else
+            echo "SKIP: ${{ matrix.squad }} no define el script 'typecheck'"
+          fi
+
+      - name: Build (solo si el script existe)
+        working-directory: ${{ matrix.dir }}
+        run: |
+          if node -e "const s=require('./package.json').scripts||{};process.exit(s.build?0:1)"; then
+            npm run build
+          else
+            echo "SKIP: ${{ matrix.squad }} no define el script 'build'"
+          fi
+
+      - name: Test (solo si el script existe)
+        working-directory: ${{ matrix.dir }}
+        run: |
+          if node -e "const s=require('./package.json').scripts||{};process.exit(s.test?0:1)"; then
+            npm test
+          else
+            echo "SKIP: ${{ matrix.squad }} no define el script 'test'"
+          fi
+
+  # ---------------------------------------------------------------------------
+  # Auditoría de artefactos sensibles versionados.
+  # No valida contenido de secretos; valida que no haya .env reales, llaves
+  # privadas ni volcados de base de datos dentro del índice de Git.
+  # ---------------------------------------------------------------------------
+  secrets-audit:
+    name: Auditoría de secretos y volcados versionados
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Verificar archivos sensibles en el índice
+        shell: bash
+        run: |
+          set -euo pipefail
+          status=0
+
+          env_files=$(git ls-files | grep -E '(^|/)\.env($|\.)' | grep -vE '\.(example|sample|template)$' || true)
+          if [ -n "$env_files" ]; then
+            echo "ERROR: archivos .env reales versionados:"
+            echo "$env_files"
+            status=1
+          fi
+
+          key_files=$(git ls-files | grep -E '\.(pem|key|pfx|p12|crt)$' || true)
+          if [ -n "$key_files" ]; then
+            echo "ERROR: llaves o certificados versionados:"
+            echo "$key_files"
+            status=1
+          fi
+
+          dump_files=$(git ls-files | grep -E '(^|/)backups/.*\.(sql|dump|bak)$' || true)
+          if [ -n "$dump_files" ]; then
+            echo "ERROR: volcados de base de datos versionados (posible PII):"
+            echo "$dump_files"
+            status=1
+          fi
+
+          if [ "$status" -eq 0 ]; then
+            echo "OK: no se detectaron .env reales, llaves ni volcados versionados."
+          fi
+          exit "$status"
+
+  # ---------------------------------------------------------------------------
+  # Validación de los scripts SQL de infraestructura contra un PostgreSQL
+  # efímero del runner. Usa únicamente scripts que existen en squad8.
+  # ---------------------------------------------------------------------------
+  infra-sql:
+    name: SQL de infraestructura (Postgres efímero)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          # Credencial efímera exclusiva del runner de CI. No es un secreto
+          # de producción y no da acceso a ningún entorno real.
+          POSTGRES_USER: ci_unisaas
+          POSTGRES_PASSWORD: ci_ephemeral_runner_only
+          POSTGRES_DB: ci_unisaas_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci_unisaas -d ci_unisaas_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Instalar cliente de PostgreSQL
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+
+      - name: Ejecutar init-db.sql
+        working-directory: squad8_devops_sre_qa-main
+        env:
+          PGPASSWORD: ci_ephemeral_runner_only
+        run: |
+          psql -h localhost -p 5432 -U ci_unisaas -d ci_unisaas_db \
+            -v ON_ERROR_STOP=1 -f scripts/init-db.sql
+
+      - name: Ejecutar test-rls.sql
+        working-directory: squad8_devops_sre_qa-main
+        env:
+          PGPASSWORD: ci_ephemeral_runner_only
+        run: |
+          psql -h localhost -p 5432 -U ci_unisaas -d ci_unisaas_db \
+            -v ON_ERROR_STOP=1 -f scripts/test-rls.sql
+
+      - name: Verificar tablas creadas
+        env:
+          PGPASSWORD: ci_ephemeral_runner_only
+        run: |
+          count=$(psql -h localhost -p 5432 -U ci_unisaas -d ci_unisaas_db \
+            -t -A -c "SELECT count(*) FROM pg_tables WHERE schemaname='public'")
+          echo "Tablas en public: $count"
+          if [ "$count" -lt 1 ]; then
+            echo "ERROR: init-db.sql no creó tablas."
+            exit 1
+          fi
+
+  # ---------------------------------------------------------------------------
+  # Validación de los artefactos de operación (sin ejecutar servicios):
+  #   - ecosystem.config.cjs carga y mantiene el contrato de producción.
+  #   - Los scripts PowerShell de deploy/healthcheck/reset-zero parsean sin
+  #     errores de sintaxis (no se ejecutan contra ninguna base).
+  # No requiere secretos ni servicios externos.
+  # ---------------------------------------------------------------------------
+  ops-scripts:
+    name: Scripts de operación (PM2 + PowerShell)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validar ecosystem.config.cjs
+        run: |
+          set -euo pipefail
+          node --check ecosystem.config.cjs
+          node -e '
+          const config = require("./ecosystem.config.cjs");
+          const expected = [
+            "squad1-auth-core",
+            "squad2-accounting-ledger",
+            "squad3-inventory-kardex",
+            "squad6-reports-escpos",
+            "squad7-cartera-creditos",
+            "squad4-web-pos",
+          ];
+          const apps = config.apps || [];
+          if (apps.length !== expected.length) {
+            console.error(`Se esperan ${expected.length} apps, hay ${apps.length}`);
+            process.exit(1);
+          }
+          for (const name of expected) {
+            const app = apps.find((item) => item.name === name);
+            if (!app) { console.error(`Falta la app ${name}`); process.exit(1); }
+            if (app.exec_mode !== "fork" || app.instances !== 1) {
+              console.error(`${name} debe ser fork con instances=1`);
+              process.exit(1);
+            }
+            if (!app.env || app.env.NODE_ENV !== "production") {
+              console.error(`${name} debe fijar NODE_ENV=production`);
+              process.exit(1);
+            }
+            if (!app.env_file) {
+              console.error(`${name} debe declarar env_file`);
+              process.exit(1);
+            }
+          }
+          const bff = apps.find((item) => item.name === "squad4-web-pos");
+          if (!/\bstart\b/.test(bff.args) || !/3100/.test(bff.args) || /\bdev\b/.test(bff.args)) {
+            console.error(`El BFF debe usar next start -p 3100, args=${bff.args}`);
+            process.exit(1);
+          }
+          const s3 = apps.find((item) => item.name === "squad3-inventory-kardex");
+          if (!String(s3.script).replace(/\\/g, "/").endsWith("dist/src/main.js")) {
+            console.error(`S3 debe ejecutar dist/src/main.js, script=${s3.script}`);
+            process.exit(1);
+          }
+          console.log("ecosystem.config.cjs OK");
+          '
+
+      - name: Validar sintaxis de los scripts PowerShell
+        shell: pwsh
+        run: |
+          $files = @(
+            'scripts/_common.ps1',
+            'scripts/healthcheck.ps1',
+            'scripts/deploy.ps1',
+            'scripts/reset-zero.ps1'
+          )
+          $failed = $false
+          foreach ($file in $files) {
+            $parseErrors = $null
+            $tokens = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path $file),
+              [ref]$tokens,
+              [ref]$parseErrors
+            ) | Out-Null
+            if ($parseErrors.Count -gt 0) {
+              $failed = $true
+              foreach ($parseError in $parseErrors) {
+                Write-Host "::error file=$file::$($parseError.Message)"
+              }
+            } else {
+              Write-Host "OK $file"
+            }
+          }
+          if ($failed) { exit 1 }
+

@@ -1,0 +1,72 @@
+# ============================================================================
+# UniSaaS Monorepo — .gitignore
+# ============================================================================
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Turborepo and Task Caches
+.turbo/
+
+# Next.js Build and Cache
+.next/
+out/
+
+# TypeScript Transpilation and Builds
+dist/
+build/
+*.tsbuildinfo
+
+# Flutter and Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+.flutter-plugins
+.flutter-plugins-dependencies
+apps/mobile-pos/build/
+apps/mobile-pos/.dart_tool/
+android/app/build/
+ios/Pods/
+
+# Environment Variables and Secrets
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Testing, Coverage and Reports
+coverage/
+*.lcov
+.nyc_output
+apps/qa-e2e/reports/*.json
+
+# Logs, Databases and Runtime Files
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+*.sqlite
+*.sqlite-journal
+*.sqlite3
+*.dump
+/logs/
+/backups/
+
+# Operating System and IDE Files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# Temporary Files and Agent Scratch
+.agents/
+.bridge/
+.antigravity-scratch/
+audit-screenshots-e2e/

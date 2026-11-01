@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 222.2 84% 4.9%;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 font-sans antialiased;
+    color: #0f172a;
+    background-color: #f8fafc;
+  }
+}
+
+/* Soporte de impresión para ticket térmico ESC/POS */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  [data-testid="receipt-modal"],
+  [data-testid="receipt-modal"] * {
+    visibility: visible;
+  }
+  [data-testid="receipt-modal"] {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+  }
+}
+

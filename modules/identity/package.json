@@ -1,0 +1,37 @@
+{
+  "name": "@unisaas/identity",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test dist/test/*.spec.js"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.2.8",
+    "@nestjs/core": "^11.2.8",
+    "@nestjs/jwt": "^11.0.2",
+    "@nestjs/swagger": "^11.2.6",
+    "@unisaas/contracts": "workspace:*",
+    "@unisaas/core-domain": "workspace:*",
+    "@unisaas/database": "workspace:*",
+    "@unisaas/redis-client": "workspace:*",
+    "bcryptjs": "^2.4.3",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.9.3"
+  }
+}
+

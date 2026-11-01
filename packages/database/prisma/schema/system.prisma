@@ -1,0 +1,67 @@
+// ============================================================================
+// DOMINIO DEL SISTEMA: IDEMPOTENCIA ACID Y OUTBOX TRANSACTIONAL
+// ============================================================================
+
+enum OutboxEventStatus {
+  PENDING
+  PROCESSING
+  PROCESSED
+  FAILED
+
+  @@map("outbox_status_enum")
+}
+
+enum IdempotencyStatus {
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+
+  @@map("idempotency_status_enum")
+}
+
+model InventoryIdempotencyKey {
+  id            String            @id @default(uuid()) @db.Uuid
+  tenantId      String            @map("tenant_id") @db.Uuid
+  key           String            @db.VarChar(150)
+  operation     String            @db.VarChar(100)
+  requestHash   String            @map("request_hash") @db.VarChar(128)
+  status        IdempotencyStatus @default(IN_PROGRESS)
+  statusCode    Int?              @map("status_code")
+  responseBody  Json?             @map("response_body") @db.JsonB
+  resourceType  String?           @map("resource_type") @db.VarChar(100)
+  resourceId    String?           @map("resource_id") @db.Uuid
+  lockedAt      DateTime          @default(now()) @map("locked_at") @db.Timestamptz
+  recoveryCount Int               @default(0) @map("recovery_count")
+  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  expiresAt     DateTime?         @map("expires_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, key], map: "uq_inventory_idempotency_key")
+  @@unique([tenantId, id], map: "uq_inventory_idempotency_tenant_id")
+  @@index([tenantId, status, lockedAt], map: "idx_idempotency_tenant_status")
+  @@map("inventory_idempotency_keys")
+}
+
+model InventoryOutboxEvent {
+  id            String            @id @default(uuid()) @db.Uuid
+  tenantId      String            @map("tenant_id") @db.Uuid
+  eventType     String            @map("event_type") @db.VarChar(100)
+  aggregateType String            @map("aggregate_type") @db.VarChar(100)
+  aggregateId   String            @map("aggregate_id") @db.Uuid
+  payload       Json              @db.JsonB
+  status        OutboxEventStatus @default(PENDING)
+  attempts      Int               @default(0)
+  availableAt   DateTime          @default(now()) @map("available_at") @db.Timestamptz
+  processedAt   DateTime?         @map("processed_at") @db.Timestamptz
+  lastError     String?           @map("last_error") @db.Text
+  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, id], map: "uq_inventory_outbox_tenant_id")
+  @@index([tenantId, status, availableAt], map: "idx_outbox_tenant_status")
+  @@map("inventory_outbox_events")
+}

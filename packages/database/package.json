@@ -1,0 +1,32 @@
+{
+  "name": "@unisaas/database",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "db:validate": "prisma validate --schema=prisma/schema",
+    "db:format": "prisma format --schema=prisma/schema",
+    "db:generate": "prisma generate --schema=prisma/schema",
+    "db:migrate:dev": "prisma migrate dev --schema=prisma/schema",
+    "db:migrate:deploy": "prisma migrate deploy --schema=prisma/schema",
+    "test": "node --test dist/test/*.spec.js"
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "prisma": "6.19.3",
+    "typescript": "^5.9.3"
+  }
+}
+

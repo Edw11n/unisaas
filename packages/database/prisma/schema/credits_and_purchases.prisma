@@ -1,0 +1,155 @@
+// ============================================================================
+// DOMINIO DE TERCEROS, COMPRAS Y CARTERA / CRÉDITOS
+// ============================================================================
+
+enum PartyType {
+  CUSTOMER
+  SUPPLIER
+  BOTH
+
+  @@map("party_type_enum")
+}
+
+enum PurchasePaymentType {
+  CONTADO
+  CREDITO
+
+  @@map("purchase_payment_type_enum")
+}
+
+enum PurchaseStatus {
+  RECEIVED
+  VOIDED
+
+  @@map("purchase_status_enum")
+}
+
+enum CreditTransactionType {
+  CHARGE_CREDIT_SALE
+  CUSTOMER_PAYMENT
+  SUPPLIER_PURCHASE
+  SUPPLIER_PAYMENT
+  VOID_REVERSAL
+
+  @@map("credit_tx_type_enum")
+}
+
+enum CreditPaymentMethod {
+  EFECTIVO
+  NEQUI
+  DAVIPLATA
+  TARJETA
+  TRANSFERENCIA
+
+  @@map("credit_payment_method_enum")
+}
+
+model ThirdParty {
+  id             String       @id @default(uuid()) @db.Uuid
+  tenantId       String       @map("tenant_id") @db.Uuid
+  documentType   DocumentType @default(CC) @map("document_type")
+  documentNumber String       @map("document_number") @db.VarChar(20)
+  name           String       @db.VarChar(150)
+  phone          String?      @db.VarChar(50)
+  email          String?      @db.VarChar(100)
+  address        String?      @db.VarChar(200)
+  partyType      PartyType    @map("party_type")
+  creditLimit    Decimal      @default(0.00) @map("credit_limit") @db.Decimal(15, 2)
+  currentDebt    Decimal      @default(0.00) @map("current_debt") @db.Decimal(15, 2)
+  isActive       Boolean      @default(true) @map("is_active")
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  journalEntryLines  JournalEntryLine[]
+  invoices           Invoice[]
+  purchases          Purchase[]
+  creditTransactions CreditTransaction[]
+
+  @@unique([tenantId, documentType, documentNumber], map: "uq_tenant_third_party_doc")
+  @@unique([tenantId, id], map: "uq_third_parties_tenant_id")
+  @@map("third_parties")
+}
+
+model Purchase {
+  id                    String              @id @default(uuid()) @db.Uuid
+  tenantId              String              @map("tenant_id") @db.Uuid
+  branchId              String              @map("branch_id") @db.Uuid
+  warehouseId           String              @map("warehouse_id") @db.Uuid
+  supplierId            String              @map("supplier_id") @db.Uuid
+  supplierInvoiceNumber String              @map("supplier_invoice_number") @db.VarChar(50)
+  purchaseDate          DateTime            @default(now()) @map("purchase_date") @db.Date
+  subtotal              Decimal             @db.Decimal(15, 2)
+  taxTotal              Decimal             @map("tax_total") @db.Decimal(15, 2)
+  grandTotal            Decimal             @map("grand_total") @db.Decimal(15, 2)
+  paymentType           PurchasePaymentType @map("payment_type")
+  dueDate               DateTime?           @map("due_date") @db.Date
+  status                PurchaseStatus      @default(RECEIVED)
+  voidReason            String?             @map("void_reason") @db.Text
+  journalEntryId        String?             @map("journal_entry_id") @db.Uuid
+  createdBy             String              @map("created_by") @db.Uuid
+  createdAt             DateTime            @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant       Tenant         @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  branch       Branch         @relation(fields: [branchId], references: [id])
+  warehouse    Warehouse      @relation(fields: [warehouseId], references: [id])
+  supplier     ThirdParty     @relation(fields: [supplierId], references: [id])
+  journalEntry JournalEntry?  @relation(fields: [journalEntryId], references: [id])
+  creator      User           @relation("PurchaseCreatedBy", fields: [createdBy], references: [id])
+  items        PurchaseItem[]
+
+  @@unique([tenantId, supplierId, supplierInvoiceNumber], map: "uq_tenant_supplier_inv")
+  @@unique([tenantId, id], map: "uq_purchases_tenant_id")
+  @@map("purchases")
+}
+
+model PurchaseItem {
+  id            String  @id @default(uuid()) @db.Uuid
+  tenantId      String  @map("tenant_id") @db.Uuid
+  purchaseId    String  @map("purchase_id") @db.Uuid
+  productId     String  @map("product_id") @db.Uuid
+  variantId     String  @map("variant_id") @db.Uuid
+  productName   String  @map("product_name") @db.VarChar(150)
+  productSku    String  @map("product_sku") @db.VarChar(50)
+  quantity      Decimal @db.Decimal(18, 6)
+  unitOfMeasure String  @default("UNIDAD") @map("unit_of_measure") @db.VarChar(20)
+  unitCost      Decimal @map("unit_cost") @db.Decimal(18, 6)
+  taxRate       Decimal @default(0.19) @map("tax_rate") @db.Decimal(5, 2)
+  subtotal      Decimal @db.Decimal(15, 2)
+  taxAmount     Decimal @map("tax_amount") @db.Decimal(15, 2)
+  total         Decimal @db.Decimal(15, 2)
+
+  tenant   Tenant         @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  purchase Purchase       @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  product  Product        @relation(fields: [productId], references: [id], onDelete: Restrict)
+  variant  ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+
+  @@unique([tenantId, id], map: "uq_purchase_items_tenant_id")
+  @@index([purchaseId], map: "idx_purchase_items_purchase")
+  @@map("purchase_items")
+}
+
+model CreditTransaction {
+  id              String                @id @default(uuid()) @db.Uuid
+  tenantId        String                @map("tenant_id") @db.Uuid
+  thirdPartyId    String                @map("third_party_id") @db.Uuid
+  type            CreditTransactionType
+  amount          Decimal               @db.Decimal(15, 2)
+  previousBalance Decimal               @map("previous_balance") @db.Decimal(15, 2)
+  newBalance      Decimal               @map("new_balance") @db.Decimal(15, 2)
+  paymentMethod   CreditPaymentMethod?  @map("payment_method")
+  referenceNumber String?               @map("reference_number") @db.VarChar(50)
+  journalEntryId  String?               @unique @map("journal_entry_id") @db.Uuid
+  createdById     String?               @map("created_by") @db.Uuid
+  createdAt       DateTime              @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  thirdParty   ThirdParty    @relation(fields: [thirdPartyId], references: [id], onDelete: Restrict)
+  journalEntry JournalEntry? @relation(fields: [journalEntryId], references: [id])
+  createdBy    User?         @relation("CreditTxCreatedBy", fields: [createdById], references: [id])
+
+  @@unique([tenantId, id], map: "uq_credit_tx_tenant_id")
+  @@index([tenantId, thirdPartyId, createdAt], map: "idx_credit_tx_timeline")
+  @@map("credit_transactions")
+}
+

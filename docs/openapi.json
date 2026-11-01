@@ -1,0 +1,1091 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "operationId": "HealthController_checkHealth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Servicios en línea"
+          },
+          "503": {
+            "description": "Servicios degradados"
+          }
+        },
+        "summary": "Sonda de disponibilidad y salud de infraestructura",
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Autenticación exitosa"
+          },
+          "401": {
+            "description": "Credenciales inválidas"
+          }
+        },
+        "summary": "Iniciar sesión y obtener tokens JWT con sesión en Redis",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "operationId": "AuthController_refresh",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Token renovado exitosamente"
+          },
+          "401": {
+            "description": "Refresh token inválido o revocado"
+          }
+        },
+        "summary": "Renovar access token mediante refresh token",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cerrar sesión activa y revocar token en Redis",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/sessions": {
+      "get": {
+        "operationId": "AuthController_getSessions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar sesiones activas del usuario",
+        "tags": [
+          "Auth"
+        ]
+      },
+      "delete": {
+        "operationId": "AuthController_revokeAllSessions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Revocar masivamente todas las sesiones activas del usuario",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/tenants/{id}": {
+      "get": {
+        "operationId": "TenantController_getTenant",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consultar detalles de una empresa/inquilino",
+        "tags": [
+          "Tenants"
+        ]
+      }
+    },
+    "/api/v1/tenants/{id}/branches": {
+      "get": {
+        "operationId": "TenantController_getBranches",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar sucursales de la empresa (con RLS)",
+        "tags": [
+          "Tenants"
+        ]
+      },
+      "post": {
+        "operationId": "TenantController_createBranch",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Crear nueva sucursal para la empresa",
+        "tags": [
+          "Tenants"
+        ]
+      }
+    },
+    "/api/v1/tenants": {
+      "post": {
+        "operationId": "TenantController_createTenant",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Registrar nueva empresa en la plataforma (Onboarding)",
+        "tags": [
+          "Tenants"
+        ]
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "operationId": "UserController_getUsers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar usuarios del inquilino autenticado (con RLS)",
+        "tags": [
+          "Users"
+        ]
+      },
+      "post": {
+        "operationId": "UserController_createUser",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Registrar un nuevo usuario en el inquilino autenticado",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/v1/inventory/products": {
+      "get": {
+        "operationId": "ProductController_getProducts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar productos del catálogo del inquilino (con RLS)",
+        "tags": [
+          "Inventory - Products"
+        ]
+      },
+      "post": {
+        "operationId": "ProductController_createProduct",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Crear un nuevo producto con su variante por defecto y código de barras",
+        "tags": [
+          "Inventory - Products"
+        ]
+      }
+    },
+    "/api/v1/inventory/products/{id}": {
+      "get": {
+        "operationId": "ProductController_getProductById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consultar detalles de un producto por ID",
+        "tags": [
+          "Inventory - Products"
+        ]
+      }
+    },
+    "/api/v1/inventory/warehouses": {
+      "get": {
+        "operationId": "WarehouseController_getWarehouses",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar bodegas o almacenes del inquilino (con RLS)",
+        "tags": [
+          "Inventory - Warehouses"
+        ]
+      },
+      "post": {
+        "operationId": "WarehouseController_createWarehouse",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Crear una nueva bodega o almacén",
+        "tags": [
+          "Inventory - Warehouses"
+        ]
+      }
+    },
+    "/api/v1/inventory/stock/balances": {
+      "get": {
+        "operationId": "StockController_getBalances",
+        "parameters": [
+          {
+            "name": "warehouseId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consultar balances de existencias por bodega (con RLS)",
+        "tags": [
+          "Inventory - Stock & Kardex"
+        ]
+      }
+    },
+    "/api/v1/inventory/stock/kardex/{variantId}": {
+      "get": {
+        "operationId": "StockController_getKardexEntries",
+        "parameters": [
+          {
+            "name": "variantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consultar historial de movimientos (Kardex) para una variante",
+        "tags": [
+          "Inventory - Stock & Kardex"
+        ]
+      }
+    },
+    "/api/v1/inventory/stock/adjustments": {
+      "post": {
+        "operationId": "StockController_adjustStock",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Registrar ajuste manual de inventario (Entrada o Salida)",
+        "tags": [
+          "Inventory - Stock & Kardex"
+        ]
+      }
+    },
+    "/api/v1/sales/shifts": {
+      "get": {
+        "operationId": "PosShiftController_getShifts",
+        "parameters": [
+          {
+            "name": "branchId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar turnos de caja de la sucursal (con RLS)",
+        "tags": [
+          "Sales - POS Shifts"
+        ]
+      }
+    },
+    "/api/v1/sales/shifts/current": {
+      "get": {
+        "operationId": "PosShiftController_getCurrentShift",
+        "parameters": [
+          {
+            "name": "branchId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consultar turno activo del cajero en la sucursal",
+        "tags": [
+          "Sales - POS Shifts"
+        ]
+      }
+    },
+    "/api/v1/sales/shifts/open": {
+      "post": {
+        "operationId": "PosShiftController_openShift",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Aperturar un nuevo turno de caja POS",
+        "tags": [
+          "Sales - POS Shifts"
+        ]
+      }
+    },
+    "/api/v1/sales/shifts/{id}/close": {
+      "post": {
+        "operationId": "PosShiftController_closeShift",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cerrar y cuadrar un turno de caja POS",
+        "tags": [
+          "Sales - POS Shifts"
+        ]
+      }
+    },
+    "/api/v1/sales/invoices": {
+      "get": {
+        "operationId": "InvoiceController_getInvoices",
+        "parameters": [
+          {
+            "name": "branchId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar facturas emitidas por la empresa (con RLS)",
+        "tags": [
+          "Sales - Invoices"
+        ]
+      },
+      "post": {
+        "operationId": "InvoiceController_createInvoice",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Emitir una nueva factura de venta (POS o Crédito)",
+        "tags": [
+          "Sales - Invoices"
+        ]
+      }
+    },
+    "/api/v1/sales/invoices/{id}": {
+      "get": {
+        "operationId": "InvoiceController_getInvoiceById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consultar detalles completos de una factura por ID",
+        "tags": [
+          "Sales - Invoices"
+        ]
+      }
+    },
+    "/api/v1/sales/invoices/{id}/void": {
+      "post": {
+        "operationId": "InvoiceController_voidInvoice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Anular una factura emitida previamente",
+        "tags": [
+          "Sales - Invoices"
+        ]
+      }
+    },
+    "/api/v1/accounting/accounts": {
+      "get": {
+        "operationId": "AccountController_getAccounts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consultar el catálogo de cuentas PUC del inquilino (con RLS)",
+        "tags": [
+          "Accounting - PUC Accounts"
+        ]
+      },
+      "post": {
+        "operationId": "AccountController_createAccount",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Crear una nueva cuenta PUC en el plan contable",
+        "tags": [
+          "Accounting - PUC Accounts"
+        ]
+      }
+    },
+    "/api/v1/accounting/accounts/{id}": {
+      "get": {
+        "operationId": "AccountController_getAccountById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consultar una cuenta PUC por ID",
+        "tags": [
+          "Accounting - PUC Accounts"
+        ]
+      }
+    },
+    "/api/v1/accounting/journals": {
+      "get": {
+        "operationId": "JournalController_getJournalEntries",
+        "parameters": [
+          {
+            "name": "branchId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar asientos contables registrados (con RLS)",
+        "tags": [
+          "Accounting - Journals"
+        ]
+      },
+      "post": {
+        "operationId": "JournalController_createJournalEntry",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Registrar un nuevo asiento contable por partida doble",
+        "tags": [
+          "Accounting - Journals"
+        ]
+      }
+    },
+    "/api/v1/accounting/journals/{id}": {
+      "get": {
+        "operationId": "JournalController_getJournalEntryById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consultar detalles y líneas de un asiento contable",
+        "tags": [
+          "Accounting - Journals"
+        ]
+      }
+    },
+    "/api/v1/accounting/journals/{id}/reverse": {
+      "post": {
+        "operationId": "JournalController_reverseJournalEntry",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reversar un asiento contable existente generando contra-asiento",
+        "tags": [
+          "Accounting - Journals"
+        ]
+      }
+    },
+    "/api/v1/accounting/reports/trial-balance": {
+      "get": {
+        "operationId": "ReportController_getTrialBalance",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Generar balance de comprobación (Sumas y Saldos) para el inquilino",
+        "tags": [
+          "Accounting - Reports"
+        ]
+      }
+    },
+    "/api/v1/credits/third-parties": {
+      "get": {
+        "operationId": "ThirdPartyController_getThirdParties",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar terceros (clientes y proveedores) del inquilino (con RLS)",
+        "tags": [
+          "Credits - Third Parties"
+        ]
+      },
+      "post": {
+        "operationId": "ThirdPartyController_createThirdParty",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Registrar un nuevo tercero (Cliente, Proveedor o Ambos)",
+        "tags": [
+          "Credits - Third Parties"
+        ]
+      }
+    },
+    "/api/v1/credits/third-parties/{id}": {
+      "get": {
+        "operationId": "ThirdPartyController_getThirdPartyById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consultar detalles e historial reciente de un tercero",
+        "tags": [
+          "Credits - Third Parties"
+        ]
+      }
+    },
+    "/api/v1/credits/purchases": {
+      "get": {
+        "operationId": "PurchaseController_getPurchases",
+        "parameters": [
+          {
+            "name": "branchId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar compras a proveedores (con RLS)",
+        "tags": [
+          "Credits - Purchases"
+        ]
+      },
+      "post": {
+        "operationId": "PurchaseController_createPurchase",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Registrar una compra a proveedor (Contado o Crédito)",
+        "tags": [
+          "Credits - Purchases"
+        ]
+      }
+    },
+    "/api/v1/credits/purchases/{id}": {
+      "get": {
+        "operationId": "PurchaseController_getPurchaseById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consultar detalles completos de una compra por ID",
+        "tags": [
+          "Credits - Purchases"
+        ]
+      }
+    },
+    "/api/v1/credits/transactions/{thirdPartyId}": {
+      "get": {
+        "operationId": "CreditController_getCreditHistory",
+        "parameters": [
+          {
+            "name": "thirdPartyId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consultar estado de cuenta e historial de créditos/abonos de un tercero",
+        "tags": [
+          "Credits - Transactions & Debt"
+        ]
+      }
+    },
+    "/api/v1/credits/transactions": {
+      "post": {
+        "operationId": "CreditController_registerTransaction",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Registrar cargo por venta a crédito o abono a cartera",
+        "tags": [
+          "Credits - Transactions & Debt"
+        ]
+      }
+    },
+    "/api/v1/pos/checkout": {
+      "post": {
+        "operationId": "CheckoutController_checkout",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Checkout"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "UniSaaS Multi-Tenant Cloud ERP & POS",
+    "description": "API Gateway modular para la plataforma SaaS contable, POS, inventarios y cartera multi-inquilino con aislamiento RLS en PostgreSQL 16 y caché auxiliar Redis 7",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http",
+        "name": "Authorization",
+        "description": "Ingrese el Access Token JWT",
+        "in": "header"
+      }
+    },
+    "schemas": {}
+  }
+}
