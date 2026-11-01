@@ -1,0 +1,176 @@
+openapi: 3.0.3
+info:
+  title: Escuadrón 7 - Gestión de Cartera, Fiados & Compras API
+  version: 1.0.0
+  description: >
+    API oficial del Escuadrón 7 para la gestión de deudas de clientes (fiados), control estricto de cupo de crédito,
+    recaudos y afectación contable a la cuenta 130505.
+servers:
+  - url: http://localhost:3007/api/v1
+    description: Entorno de Desarrollo Local
+  - url: https://api.saascontable.uniputumayo.edu.co/api/v1/cartera
+    description: Entorno de Producción
+paths:
+  /health:
+    get:
+      summary: Healthcheck integral del módulo de cartera
+      operationId: getCarteraHealth
+      responses:
+        '200':
+          description: Servicio de cartera y cobranza operativo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: UP
+                  creditValidationService:
+                    type: string
+                    example: READY
+
+  /metrics:
+    get:
+      summary: Métricas de rendimiento para Prometheus
+      operationId: getCarteraMetrics
+      responses:
+        '200':
+          description: Métricas en formato oficial Prometheus
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /cartera/debts:
+    post:
+      summary: Registro de venta a crédito (fiado) con validación de límite
+      description: Valida el cupo de endeudamiento del cliente en tiempo real. Retorna 400 si supera el límite de crédito.
+      operationId: createCustomerDebt
+      parameters:
+        - name: X-Tenant-Id
+          in: header
+          required: true
+          description: Identificador UUID del inquilino para aislamiento RLS
+          schema:
+            type: string
+            format: uuid
+            example: '70000000-0000-0000-0000-000000000007'
+        - name: X-Idempotency-Key
+          in: header
+          required: true
+          description: Llave única para prevenir duplicación de causación de deudas
+          schema:
+            type: string
+            example: 'cartera-debt-uuid-2026-squad7'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - customerId
+                - amount
+                - dueDate
+                - invoiceReference
+              properties:
+                customerId:
+                  type: string
+                  format: uuid
+                  example: 'c0000000-0000-0000-0000-000000000001'
+                amount:
+                  type: number
+                  example: 150000.00
+                dueDate:
+                  type: string
+                  format: date
+                  example: '2026-11-15'
+                invoiceReference:
+                  type: string
+                  example: 'INV-2026-10023'
+      responses:
+        '201':
+          description: Deuda generada exitosamente afectando cuenta 130505
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  debtId:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: APPROVED
+                  currentBalance:
+                    type: number
+                    example: 150000.00
+        '400':
+          description: Cupo de crédito superado o cliente bloqueado por mora
+
+  /cartera/payments:
+    post:
+      summary: Registro de abono o pago de cartera
+      description: Asienta el recaudo disminuyendo el saldo en mora e impacta la conciliación contable.
+      operationId: registerDebtPayment
+      parameters:
+        - name: X-Tenant-Id
+          in: header
+          required: true
+          description: Identificador UUID del inquilino multi-tenant
+          schema:
+            type: string
+            format: uuid
+            example: '70000000-0000-0000-0000-000000000007'
+        - name: X-Idempotency-Key
+          in: header
+          required: true
+          description: Llave única de idempotencia para transacciones financieras
+          schema:
+            type: string
+            example: 'cartera-pay-uuid-2026-squad7'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - debtId
+                - paymentAmount
+                - paymentMethod
+              properties:
+                debtId:
+                  type: string
+                  format: uuid
+                  example: 'd0000000-0000-0000-0000-000000000001'
+                paymentAmount:
+                  type: number
+                  example: 50000.00
+                paymentMethod:
+                  type: string
+                  enum: [CASH, TRANSFER, CARD]
+                  example: CASH
+                receiptNumber:
+                  type: string
+                  example: 'RC-2026-0045'
+      responses:
+        '200':
+          description: Abono asentado exitosamente con comprobante
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  receiptId:
+                    type: string
+                    format: uuid
+                  remainingBalance:
+                    type: number
+                    example: 100000.00
+                  status:
+                    type: string
+                    example: APPLIED
+        '400':
+          description: Monto excede la deuda pendiente o formato inválido

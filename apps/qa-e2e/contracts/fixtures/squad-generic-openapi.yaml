@@ -1,0 +1,90 @@
+openapi: 3.0.3
+info:
+  title: Escuadrones Genéricos (E1, E3, E6, E7) API
+  version: 1.0.0
+  description: >
+    Contrato genérico OpenAPI 3.0.3 representativo de los escuadrones backend
+    E1 (Core Auth), E3 (Inventario Kardex), E6 (Reportes Financieros) y E7 (Cartera y Créditos).
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Entorno de Desarrollo Local
+paths:
+  /health:
+    get:
+      summary: Healthcheck de disponibilidad del servicio
+      operationId: getHealth
+      responses:
+        '200':
+          description: Servicio disponible y conectado a recursos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: UP
+
+  /metrics:
+    get:
+      summary: Métricas de observabilidad y rendimiento para Prometheus
+      operationId: getMetrics
+      responses:
+        '200':
+          description: Métricas en formato oficial Prometheus
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /records:
+    post:
+      summary: Registro transaccional genérico
+      operationId: createRecord
+      parameters:
+        - name: X-Tenant-Id
+          in: header
+          required: true
+          description: Identificador UUID del inquilino multi-tenant para aislamiento RLS
+          schema:
+            type: string
+            format: uuid
+            example: '10000000-0000-0000-0000-000000000001'
+        - name: X-Idempotency-Key
+          in: header
+          required: true
+          description: Llave única de idempotencia para prevención de duplicados
+          schema:
+            type: string
+            example: 'idemp-generic-record-2026'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reference
+                - payload
+              properties:
+                reference:
+                  type: string
+                  example: 'TX-REF-001'
+                payload:
+                  type: object
+      responses:
+        '201':
+          description: Registro creado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: CREATED
+        '400':
+          description: Error en solicitud o cabeceras obligatorias ausentes

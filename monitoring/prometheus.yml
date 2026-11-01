@@ -1,0 +1,82 @@
+# monitoring/prometheus.yml
+# Configuracion oficial de Prometheus para Observabilidad SRE - Ecosistema UNISAAS
+# SLA: p95 < 200ms | Scrape Interval: 5s
+
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+  scrape_timeout: 4s
+
+alerting:
+  alertmanagers: []
+
+rule_files: []
+
+scrape_configs:
+  # 1. Monitoreo interno de Prometheus
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus-engine'
+          env: 'production-sala121'
+
+  # 2. Squad 1: Core Architecture, RLS & RBAC (Puerto 3001)
+  - job_name: 'squad1-auth'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['squad1-auth:3001', 'host.docker.internal:3001']
+        labels:
+          squad: 'squad1-core-auth'
+          port: '3001'
+          env: 'sala121'
+
+  # 3. Squad 2: Motor Contable NIIF & Libro Mayor (Puerto 3002)
+  - job_name: 'squad2-accounting'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['squad2-accounting:3002', 'host.docker.internal:3002']
+        labels:
+          squad: 'squad2-ledger-niif'
+          port: '3002'
+          env: 'sala121'
+
+  # 4. Squad 3: Inventario & Kardex CPP (Puerto 3003)
+  - job_name: 'squad3-inventory'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['squad3-inventory:3003', 'host.docker.internal:3003']
+        labels:
+          squad: 'squad3-kardex-cpp'
+          port: '3003'
+          env: 'sala121'
+
+  # 5. Squad 4: Web Desktop POS Next.js (Puerto 3000)
+  - job_name: 'squad4-pos'
+    metrics_path: '/api/metrics'
+    static_configs:
+      - targets: ['host.docker.internal:3000']
+        labels:
+          squad: 'squad4-pos-checkout'
+          port: '3000'
+          env: 'sala121'
+
+  # 6. Squad 6: Reportes, Auditoria & ESC/POS (Puerto 3006)
+  - job_name: 'squad6-reports'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['squad6-reports:3006', 'host.docker.internal:3006']
+        labels:
+          squad: 'squad6-audit-reports'
+          port: '3006'
+          env: 'sala121'
+
+  # 7. Squad 7: Creditos, Compras & Proveedores (Puerto 3007)
+  - job_name: 'squad7-cartera'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['squad7-cartera:3007', 'host.docker.internal:3007']
+        labels:
+          squad: 'squad7-credits-purchases'
+          port: '3007'
+          env: 'sala121'

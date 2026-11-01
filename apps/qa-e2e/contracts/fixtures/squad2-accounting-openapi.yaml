@@ -1,0 +1,105 @@
+openapi: 3.0.3
+info:
+  title: Escuadrón 2 - Motor Contable NIIF API
+  version: 1.0.0
+  description: >
+    API Hexagonal oficial del Escuadrón 2 encargada de recibir transacciones económicas,
+    garantizar partida doble, inmutabilidad financiera y calcular estados financieros.
+servers:
+  - url: http://localhost:3002/api/v1/accounting
+    description: Entorno de Desarrollo Local
+  - url: https://api.saascontable.uniputumayo.edu.co/api/v1/accounting
+    description: Entorno de Producción
+paths:
+  /health:
+    get:
+      summary: Healthcheck integral del Motor Contable
+      operationId: getHealth
+      responses:
+        '200':
+          description: Motor contable saludable y operativo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: UP
+                  database:
+                    type: string
+                    example: CONNECTED
+
+  /metrics:
+    get:
+      summary: Métricas de rendimiento para Prometheus
+      operationId: getMetrics
+      responses:
+        '200':
+          description: Métricas en formato oficial Prometheus
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /journal-entries/sales-pos:
+    post:
+      summary: Acelerador de Causación POS (Ventas Automáticas)
+      description: Construye automáticamente las líneas contables NIIF para una venta POS.
+      operationId: createSalesPosJournalEntry
+      parameters:
+        - name: X-Tenant-Id
+          in: header
+          required: true
+          description: Identificador UUID del inquilino multi-tenant para aislamiento RLS
+          schema:
+            type: string
+            format: uuid
+            example: '20000000-0000-0000-0000-000000000002'
+        - name: X-Idempotency-Key
+          in: header
+          required: true
+          description: Llave única de idempotencia para garantizar deduplicación de ventas
+          schema:
+            type: string
+            example: 'pos-sale-uuid-2026-squad2'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - subtotal
+                - tax
+                - total
+                - costOfGoodsSold
+              properties:
+                subtotal:
+                  type: number
+                  example: 100000.00
+                tax:
+                  type: number
+                  example: 19000.00
+                total:
+                  type: number
+                  example: 119000.00
+                costOfGoodsSold:
+                  type: number
+                  example: 60000.00
+      responses:
+        '201':
+          description: Venta POS causada contablemente de forma inmutable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entryId:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: POSTED
+        '400':
+          description: Petición inválida o fallo en partida doble

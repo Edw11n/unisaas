@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "test": "node --test dist/contracts/*.spec.js",
+    "test:contracts": "node --test dist/contracts/*.spec.js",
     "test:rls": "node --test dist/rls-certification/run-rls-tests.js",
     "test:e2e": "node --test --test-concurrency=1 dist/e2e/*.e2e-spec.js",
     "seed": "node dist/fixtures/seed-qa-data.js",
@@ -20,7 +22,7 @@
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.10.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "yaml": "^2.9.1"
   }
 }
-

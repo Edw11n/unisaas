@@ -1,0 +1,168 @@
+openapi: 3.0.3
+info:
+  title: Escuadrón 3 - Inventario, Kardex & Costeo API
+  version: 1.0.0
+  description: >
+    API oficial del Escuadrón 3 encargada del control de movimientos de inventario,
+    Kardex inmutable y cálculo de Costo Promedio Ponderado (CPP).
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Entorno de Desarrollo Local
+  - url: https://api.saascontable.uniputumayo.edu.co/api/v1/inventory
+    description: Entorno de Producción
+paths:
+  /health:
+    get:
+      summary: Healthcheck integral del módulo de inventario
+      operationId: getInventoryHealth
+      responses:
+        '200':
+          description: Servicio de inventario y Kardex operativo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: UP
+                  kardexEngine:
+                    type: string
+                    example: ACTIVE
+
+  /metrics:
+    get:
+      summary: Métricas de rendimiento para Prometheus
+      operationId: getInventoryMetrics
+      responses:
+        '200':
+          description: Métricas en formato oficial Prometheus
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /inventory/movements:
+    post:
+      summary: Registro inmutable de movimiento en Kardex
+      description: Registra entradas, salidas y ajustes respetando el aislamiento multi-tenant y precisión decimal estricta en strings.
+      operationId: createInventoryMovement
+      parameters:
+        - name: X-Tenant-Id
+          in: header
+          required: true
+          description: Identificador UUID del inquilino para aislamiento RLS
+          schema:
+            type: string
+            format: uuid
+            example: '30000000-0000-0000-0000-000000000003'
+        - name: X-Idempotency-Key
+          in: header
+          required: true
+          description: Llave única para evitar duplicación de movimientos de stock
+          schema:
+            type: string
+            example: 'kardex-mov-uuid-2026-squad3'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - movementType
+                - productId
+                - quantity
+                - unitCost
+                - warehouseId
+              properties:
+                movementType:
+                  type: string
+                  enum: [ENTRY, EXIT, ADJUSTMENT]
+                  example: ENTRY
+                productId:
+                  type: string
+                  format: uuid
+                  example: 'a0000000-0000-0000-0000-000000000001'
+                quantity:
+                  type: number
+                  example: 50
+                unitCost:
+                  type: string
+                  description: Costo unitario representado como string para preservar precisión decimal
+                  example: '15400.50'
+                warehouseId:
+                  type: string
+                  format: uuid
+                  example: 'b0000000-0000-0000-0000-000000000001'
+      responses:
+        '201':
+          description: Movimiento de inventario asentado en Kardex
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  movementId:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: COMMITTED
+        '400':
+          description: Datos inválidos o stock insuficiente en salida
+
+  /kardex/calculate-cpp:
+    post:
+      summary: Cálculo oficial de Costo Promedio Ponderado (CPP)
+      description: Ejecuta el recalculo de CPP por producto sin alterar el histórico inmutable.
+      operationId: calculateCpp
+      parameters:
+        - name: X-Tenant-Id
+          in: header
+          required: true
+          description: UUID del inquilino multi-tenant
+          schema:
+            type: string
+            format: uuid
+            example: '30000000-0000-0000-0000-000000000003'
+        - name: X-Idempotency-Key
+          in: header
+          required: true
+          description: Llave única de idempotencia
+          schema:
+            type: string
+            example: 'cpp-calc-uuid-2026-squad3'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - productId
+              properties:
+                productId:
+                  type: string
+                  format: uuid
+                  example: 'a0000000-0000-0000-0000-000000000001'
+                period:
+                  type: string
+                  example: '2026-10'
+      responses:
+        '200':
+          description: Costo Promedio Ponderado calculado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  productId:
+                    type: string
+                    format: uuid
+                  weightedAverageCost:
+                    type: string
+                    example: '14850.25'
+                  totalStock:
+                    type: number
+                    example: 120
