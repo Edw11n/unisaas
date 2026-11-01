@@ -9,19 +9,37 @@ import {
 import { AuthService } from './services/auth.service.js';
 import { TenantService } from './services/tenant.service.js';
 import { UserService } from './services/user.service.js';
+import { BranchService } from './services/branch.service.js';
+import { CommercialCategoriesService } from './services/commercial-categories.service.js';
+import { PlansService } from './services/plans.service.js';
+import { PlatformService } from './services/platform.service.js';
+import { ActivationService } from './services/activation.service.js';
+
 import { AuthController } from './controllers/auth.controller.js';
 import { TenantController } from './controllers/tenant.controller.js';
 import { UserController } from './controllers/user.controller.js';
+import { BranchController } from './controllers/branch.controller.js';
+import { CommercialCategoriesController } from './controllers/commercial-categories.controller.js';
+import { PlansController } from './controllers/plans.controller.js';
+import { PlatformController } from './controllers/platform.controller.js';
 
 @Module({
   imports: [
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SECRET || 'unisaas-jwt-secret-key-32-chars-min',
-      signOptions: { expiresIn: '15m' },
+      signOptions: { expiresIn: '8h' },
     }),
   ],
-  controllers: [AuthController, TenantController, UserController],
+  controllers: [
+    AuthController,
+    TenantController,
+    UserController,
+    BranchController,
+    CommercialCategoriesController,
+    PlansController,
+    PlatformController,
+  ],
   providers: [
     {
       provide: PrismaClient,
@@ -29,7 +47,9 @@ import { UserController } from './controllers/user.controller.js';
         const client = new PrismaClient({
           datasources: {
             db: {
-              url: process.env.DATABASE_URL || 'postgresql://app_runtime:postgres@localhost:5432/saas_contable_db?schema=public',
+              url:
+                process.env.DATABASE_URL ||
+                'postgresql://app_runtime:postgres@localhost:5432/saas_contable_db?schema=public',
             },
           },
         });
@@ -56,6 +76,11 @@ import { UserController } from './controllers/user.controller.js';
       useFactory: (redisService: RedisClientService) => new TokenBlacklistService(redisService),
       inject: [RedisClientService],
     },
+    ActivationService,
+    CommercialCategoriesService,
+    PlansService,
+    BranchService,
+    PlatformService,
     AuthService,
     TenantService,
     UserService,
@@ -64,6 +89,11 @@ import { UserController } from './controllers/user.controller.js';
     AuthService,
     TenantService,
     UserService,
+    BranchService,
+    CommercialCategoriesService,
+    PlansService,
+    PlatformService,
+    ActivationService,
     PrismaClient,
     RedisClientService,
     SessionCacheService,
@@ -72,4 +102,3 @@ import { UserController } from './controllers/user.controller.js';
   ],
 })
 export class IdentityModule {}
-

@@ -32,7 +32,7 @@ export interface CreateUserDto {
   fullName: string;
   documentNumber: string;
   documentType?: 'CC' | 'CE' | 'TI' | 'NIT' | 'PP' | 'PEP';
+  phone?: string;
   role: 'OWNER' | 'ADMIN' | 'ACCOUNTANT' | 'WAREHOUSE_MANAGER' | 'CASHIER';
   branchId?: string;
 }
-

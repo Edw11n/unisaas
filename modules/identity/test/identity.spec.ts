@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { AuthService } from '../src/services/auth.service.js';
 import { TenantService } from '../src/services/tenant.service.js';
 import { UserService } from '../src/services/user.service.js';
+import { CommercialCategoriesService } from '../src/services/commercial-categories.service.js';
+import { PlansService } from '../src/services/plans.service.js';
+import { ActivationService } from '../src/services/activation.service.js';
 import { BadRequestException, UnauthorizedException, ConflictException } from '@nestjs/common';
 
 describe('Módulo de Identidad, Autenticación y RBAC (@unisaas/identity)', () => {
@@ -25,12 +28,19 @@ describe('Módulo de Identidad, Autenticación y RBAC (@unisaas/identity)', () =
     blacklistToken: async () => {},
   } as any;
 
+  const categoriesService = new CommercialCategoriesService();
+  const plansService = new PlansService();
+  const activationService = new ActivationService();
+
   it('AuthService.login rechaza solicitudes con email o password vacíos', async () => {
     const service = new AuthService(
       {} as any,
       dummyJwtService,
       dummySessionCache,
       dummyTokenBlacklist,
+      categoriesService,
+      plansService,
+      activationService,
     );
 
     await assert.rejects(
@@ -51,6 +61,9 @@ describe('Módulo de Identidad, Autenticación y RBAC (@unisaas/identity)', () =
       dummyJwtService,
       dummySessionCache,
       dummyTokenBlacklist,
+      categoriesService,
+      plansService,
+      activationService,
     );
 
     await assert.rejects(
@@ -81,4 +94,3 @@ describe('Módulo de Identidad, Autenticación y RBAC (@unisaas/identity)', () =
     );
   });
 });
-
