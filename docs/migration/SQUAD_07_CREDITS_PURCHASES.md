@@ -61,3 +61,4 @@ $ node --test dist/test/*.spec.js
 
 ## 3. Veredicto
 Squad 7 queda cerrada y aprobada formalmente para integración en la plataforma monorepo definitiva.
+

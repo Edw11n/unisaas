@@ -70,3 +70,4 @@ $ node --test dist/contracts/*.spec.js
 
 ## 3. Veredicto
 Squad 8 queda formalmente certificada y cerrada, completando las 8 squads del ecosistema UniSaaS.
+

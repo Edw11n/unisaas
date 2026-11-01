@@ -51,3 +51,4 @@ Ejecución oficial de la suite completa de pruebas Flutter (`flutter test`):
 - `test/real_backend_integration_test.dart`: 4/4 pruebas passing con sonda de detección de backend.
 
 **Resultado Total:** 23/23 pruebas exitosas (0 fallidas).
+

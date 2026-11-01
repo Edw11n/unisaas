@@ -37,3 +37,4 @@ La funcionalidad de generación térmica ESC/POS, auditoría de ventas, anulaci�
 - **Pruebas de `@unisaas/escpos`:** 5/5 pruebas passing (Perfiles 80mm/58mm, apertura de gaveta, codificación CP850 y sanitización de control).
 - **Pruebas de `@unisaas/sales`:** 7/7 pruebas passing (Turnos de caja, diferencias de arqueo, cálculo de IVA, anulación idempotente y 404 cross-tenant).
 - **Regresión Monorepo:** 22/22 tareas exitosas en Turborepo.
+
