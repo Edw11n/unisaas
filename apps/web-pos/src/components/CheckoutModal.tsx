@@ -15,6 +15,7 @@ import {
 import { usePosCartStore, CustomerInfo } from '@/store/pos-cart.store';
 import { apiClient } from '@/lib/api-client';
 import { formatCOP } from '@/lib/utils';
+import { playSuccessCashSound, playErrorSound } from '@/lib/sound-effects';
 
 interface CheckoutModalProps {
   branchId?: string;
@@ -113,6 +114,10 @@ export function CheckoutModal({ branchId = '11111111-1111-1111-1111-111111111111
 
       const result = await apiClient.checkout.execute(checkoutDto, idempotencyKey);
 
+      try {
+        playSuccessCashSound();
+      } catch {}
+
       // Guardar comprobante en el store
       setLastReceipt({
         success: true,
@@ -135,6 +140,9 @@ export function CheckoutModal({ branchId = '11111111-1111-1111-1111-111111111111
       setIsOpen(false);
       setReceiptModalOpen(true);
     } catch (err: any) {
+      try {
+        playErrorSound();
+      } catch {}
       console.error('Error durante el checkout POS:', err);
       if (err.statusCode === 409) {
         setErrorMessage('Conflicto de concurrencia: stock insuficiente o clave duplicada en proceso.');

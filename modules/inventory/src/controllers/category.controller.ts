@@ -57,3 +57,4 @@ export class CategoryController {
     return this.categoryService.deleteCategory(tenantId, id);
   }
 }
+

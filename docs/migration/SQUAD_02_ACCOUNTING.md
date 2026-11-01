@@ -62,3 +62,4 @@ La Squad 2 ha completado la migración y consolidación total del motor contable
   - Balance general clasificado con cumplimiento de la ecuación patrimonial.
   - Estado de resultados con cálculo de utilidad bruta y neta.
   - Libro auxiliar con saldo acumulado cronológico.
+

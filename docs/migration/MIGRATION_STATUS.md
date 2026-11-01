@@ -14,8 +14,8 @@
 | **1** | **Identity, RLS, RBAC, Onboarding & Platform** | `modules/identity`, `apps/api-gateway` | ✅ **CERRADA** | 25/25 Tests (100%) | `83cbdd2` |
 | **2** | **Accounting, PUC & Financial Reports** | `modules/accounting` | ✅ **CERRADA** | 15/15 Tests (100%) | `b57d773` |
 | **3** | **Inventory & Kardex CPP** | `modules/inventory` | ✅ **CERRADA** | 19/19 Tests (100%) | Pendiente de commit |
-| **4** | **Web Desktop POS** | `apps/web-pos` | ⏳ SIGUIENTE | Pendiente de inicio | - |
-| **5** | **Mobile POS Offline** | `apps/mobile-pos` | ⏳ PENDIENTE | Pendiente de inicio | - |
+| **4** | **Web Desktop POS** | `apps/web-pos` | ✅ **CERRADA** | 23/23 Tests (100%) | Pendiente de commit |
+| **5** | **Mobile POS Offline** | `apps/mobile-pos` | ⏳ SIGUIENTE | Pendiente de inicio | - |
 | **6** | **Reports, Audit & ESCPOS** | `packages/escpos`, `modules/sales` | ⏳ PENDIENTE | Pendiente de inicio | - |
 | **7** | **Credits, Purchases & Suppliers** | `modules/credits` | ⏳ PENDIENTE | Pendiente de inicio | - |
 | **8** | **DevOps, SRE & QA** | `apps/qa-e2e` | ⏳ PENDIENTE | Pendiente de inicio | - |

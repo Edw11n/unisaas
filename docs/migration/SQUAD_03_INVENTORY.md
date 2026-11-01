@@ -75,3 +75,4 @@ La Squad 3 ha completado la migración e integración integral del motor transac
   - Alertas de stock bajo y cálculo de desabastecimiento.
   - Búsqueda por código de barras de producto.
   - Validación de nombres únicos en árbol de categorías.
+

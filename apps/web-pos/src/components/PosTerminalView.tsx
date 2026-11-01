@@ -8,6 +8,8 @@ import { CheckoutModal } from './CheckoutModal';
 import { ReceiptModal } from './ReceiptModal';
 import { apiClient } from '@/lib/api-client';
 import { UserSession } from '@/lib/auth-session';
+import { usePosCartStore } from '@/store/pos-cart.store';
+import { useRouter } from 'next/navigation';
 
 interface PosTerminalViewProps {
   user: UserSession | null;
@@ -82,12 +84,41 @@ const FALLBACK_PRODUCTS: ProductCatalogItem[] = [
 ];
 
 export function PosTerminalView({ user, token }: PosTerminalViewProps) {
+  const router = useRouter();
   const [products, setProducts] = useState<ProductCatalogItem[]>(FALLBACK_PRODUCTS);
   const [loading, setLoading] = useState(false);
   const [activeShift, setActiveShift] = useState<any>(null);
 
+  const items = usePosCartStore((state) => state.items);
+  const isCheckoutModalOpen = usePosCartStore((state) => state.isCheckoutModalOpen);
+  const setCheckoutModalOpen = usePosCartStore((state) => state.setCheckoutModalOpen);
+  const setReceiptModalOpen = usePosCartStore((state) => state.setReceiptModalOpen);
+
   const branchId = user?.branchId || 'a1111111-1111-1111-1111-111111111111';
   const warehouseId = 'b1111111-1111-1111-1111-111111111111';
+
+  // Manejo de atajos de teclado POS (F1, F2, ESC)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F1') {
+        e.preventDefault();
+        router.push('/admin/help');
+      } else if (e.key === 'F2') {
+        e.preventDefault();
+        if (items.length > 0) {
+          setCheckoutModalOpen(true);
+        }
+      } else if (e.key === 'Escape') {
+        if (isCheckoutModalOpen) {
+          e.preventDefault();
+          setCheckoutModalOpen(false);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [items.length, isCheckoutModalOpen, router, setCheckoutModalOpen]);
 
   useEffect(() => {
     if (token) {

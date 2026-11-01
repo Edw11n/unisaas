@@ -595,3 +595,4 @@ describe('Squad 3 — Motor de Inventario, Kardex Multi-Bodega & Costo Promedio 
     });
   });
 });
+

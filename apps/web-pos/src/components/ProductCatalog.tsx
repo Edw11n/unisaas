@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { Search, Plus, Package } from 'lucide-react';
 import { usePosCartStore } from '@/store/pos-cart.store';
 import { formatCOP } from '@/lib/utils';
+import { playBeepSound } from '@/lib/sound-effects';
 
 export interface ProductCatalogItem {
   id: string;
@@ -58,6 +59,10 @@ export function ProductCatalog({ products, defaultWarehouseId }: ProductCatalogP
   const handleSelectProduct = (prod: ProductCatalogItem) => {
     const variant = prod.variants[0];
     if (!variant) return;
+
+    try {
+      playBeepSound();
+    } catch {}
 
     addItem({
       productId: prod.id,
