@@ -65,3 +65,4 @@ La aplicación opera con sesión segura vía cookies `httpOnly`, interactúa con
    - **Total:** 23/23 pruebas unitarias passing (100%).
 3. **Regresión Global del Monorepo:**
    - 22 tareas de test exitosas en Turborepo en todo el proyecto.
+
